@@ -1,5 +1,5 @@
 import os
-from FunWithStrings import FunWithStringsAPI
+from fun_with_strings import FunWithStringsAPI
 from flask_api import status
 from flask import current_app
 import unittest
