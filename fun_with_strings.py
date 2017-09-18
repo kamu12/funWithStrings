@@ -1,4 +1,5 @@
 from flask import Flask, abort, jsonify, json, make_response
+import collections
 import requests
 
 
@@ -60,21 +61,21 @@ class FunWithStringsAPI(object):
 		if resp.status_code != 200:
 			return resp
 
-		text = resp.json().get('query').get('pages').get(str(page_id)).get('extract')
+		try:
+			text = resp.json()['query']['pages'][str(page_id)]['extract']
+		except KeyError:
+			resp = {"error": self.__NoPageErrorMsg}
+			return make_response(jsonify(resp), 404)
+
 		self.text = text
 		self.word = word
 
 		return make_response(jsonify({word: text}), 200)
 
 	def count_words(self):
-		self.text.replace('.', ' ').replace('/n', '')
+		self.text.replace('.', ' ')
 		words = self.text.split()
-		self.wordcount = {}
-		for word in self.text.split():
-			if word not in self.wordcount:
-				self.wordcount[word] = 1
-			else:
-				self.wordcount[word] += 1
+		self.wordcount = collections.Counter(words)
 
 	def get_words(self, word='', n = 5):
 		# if there's no preloaded text or user specify word explicitly - get a word
@@ -88,10 +89,10 @@ class FunWithStringsAPI(object):
 
 		self.count_words()
 
-		sortedList = sorted(self.wordcount, key=self.wordcount.get, reverse=True)
+		sorted_list = sorted(self.wordcount, key=self.wordcount.get, reverse=True)
 		if n > len(sortedList):
 			n = len(sortedList)
-		top = [(sortedList[i], self.wordcount[sortedList[i]]) for i in range(n)]
+		top = [(sorted_list[i], self.wordcount[sorted_list[i]]) for i in range(n)]
 
 		return make_response(jsonify({self.word: top}), 200)
 
