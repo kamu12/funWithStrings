@@ -6,52 +6,65 @@ class FunWithStringsAPI(object):
 	__RandWordURL = 'http://setgetgo.com/randomword/get.php'
 	__WikiExistPageURL = 'https://en.wikipedia.org/w/api.php?action=parse&page={}&prop=&format=json'
 	__WikiPageURL = 'https://en.wikipedia.org/w/api.php?action=query&titles={}&prop=extracts&exintro=&format=json'
+	__ConnectionErrorMsg = 'Connection error. Please check your network connection.'
+	__NoPageErrorMsg = 'Ther''s no wiki page for this word. Please specify another one'
 	__NoPageErrorCode = 432
 
 	def __init__(self, name):
 		self.app = Flask(name)
 		self.app.add_url_rule('/get_word', view_func=self.get_word, methods=['GET'])
 		self.app.add_url_rule('/get_wiki', view_func=self.get_wiki, methods=['GET'])
+		self.app.add_url_rule('/get_wiki/<word>', view_func=self.get_wiki, methods=['GET'])
 		self.app.add_url_rule('/get_words/', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<int:n>', view_func=self.get_words, methods=['GET'])
+		self.app.add_url_rule('/get_words/<word>', view_func=self.get_words, methods=['GET'])
+		self.app.add_url_rule('/get_words/<word>/<int:n>', view_func=self.get_words, methods=['GET'])
 
 	def run(self):
 		self.app.run(debug=True)
 
-	def get_word(self):
+	def _get_word(self):
 		resp = self.make_API_call(self.__RandWordURL)
 		if resp.status_code != 200:
-			return resp
+			return ''
 
-		self.word = resp.text
-		return make_response(self.word)
+		return resp.text
+
+	def get_word(self):
+		word = self._get_word()
+		if word == '':
+			return self.connection_error_resp()
+
+		return make_response(word)
 	
-	def get_wiki(self):
-		if not hasattr(self, 'word'):
-			resp = self.get_word()
-			if resp.status_code != 200:
+	def get_wiki(self, word=''):
+		if word == '':
+			word = self._get_word()
+			if word == '':
 				return self.connection_error_resp()
 
-		exist_req = self.make_API_call(self.__WikiExistPageURL.format(self.word))
+		exist_req = self.make_API_call(self.__WikiExistPageURL.format(word))
 
 		#handle connection error
+		if exist_req.status_code != 200:
+			return self.connection_error_resp()
+
 		if hasattr(exist_req, 'json'):
 			exist_req = exist_req.json()
 
 		if 'error' in exist_req:
-			#if ther's no wiki page for current word, we could generate a new word interanlly
-			#self.get_word()
 			return make_response(jsonify(exist_req), self.__NoPageErrorCode)
 
 		page_id = exist_req['parse']['pageid']
-		resp = self.make_API_call(self.__WikiPageURL.format(self.word))
+		resp = self.make_API_call(self.__WikiPageURL.format(word))
 		if resp.status_code != 200:
 			return resp
 
 		text = resp.json().get('query').get('pages').get(str(page_id)).get('extract')
 		self.text = text
+		self.word = word
 
-		return make_response(jsonify({self.word: self.text}), 200)
+		return make_response(jsonify({word: text}), 200)
 
 	def count_words(self):
 		self.text.replace('.', ' ').replace('/n', '')
@@ -63,11 +76,12 @@ class FunWithStringsAPI(object):
 			else:
 				self.wordcount[word] += 1
 
-	def get_words(self, n = 5):
-		if not hasattr(self, 'text'):
-			resp = self.get_wiki()
+	def get_words(self, word='', n = 5):
+		# if there's no preloaded text or user specify word explicitly - get a word
+		if not hasattr(self, 'text') or word != '':
+			resp = self.get_wiki(word)
 			if resp.status_code == self.__NoPageErrorCode:
-				resp = {"error": "Ther's no wiki page for current word. Please generate another word"}
+				resp = {"error": self.__NoPageErrorMsg}
 				return make_response(jsonify(resp), 404)
 			elif resp.status_code != 200:
 				return self.connection_error_resp()
@@ -89,8 +103,8 @@ class FunWithStringsAPI(object):
 			return self.connection_error_resp()
 
 	def connection_error_resp(self):
-		resp = {"error": "Connection error. Please check your network connection."}
-		return make_response(jsonify(resp), 404)
+		resp = {"error": self.__ConnectionErrorMsg}
+		return make_response(jsonify(resp), 503)
 	
 if __name__ == '__main__':
 	fs = FunWithStringsAPI(__name__)
