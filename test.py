@@ -59,6 +59,27 @@ class StringsTestCase(unittest.TestCase):
             response = client.get('/get_words/lviv/-1')
             self.assertTrue(status.is_client_error(response.status_code))
 
+    def test_joke_sucess(self):
+        with self.app_test as client:
+            response = client.get('/get_joke')
+            self.assertTrue(status.is_success(response.status_code))
+
+    def test_joke_first_name_sucess(self):
+        with self.app_test as client:
+            response = client.get('/get_joke?firstName=Bruce')
+            self.assertTrue(status.is_success(response.status_code))
+
+    def test_joke_last_name_sucess(self):
+        with self.app_test as client:
+            response = client.get('/get_joke?lastName=Lee')
+            self.assertTrue(status.is_success(response.status_code))
+
+    def test_joke_full_name_sucess(self):
+        with self.app_test as client:
+            response = client.get('/get_joke?firstName=Bruce&lastName=Lee')
+            self.assertTrue(status.is_success(response.status_code))
+
+
 
 if __name__ == '__main__':
     unittest.main()
