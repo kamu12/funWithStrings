@@ -1,5 +1,5 @@
-from flask import Flask, abort, jsonify, json, make_response, request
-import collections
+from flask import Flask, abort, jsonify, json, make_response, request, Response
+from collections import Counter
 import requests
 
 
@@ -14,6 +14,7 @@ class FunWithStringsAPI(object):
 
 	def __init__(self, name):
 		self.app = Flask(name)
+		self.app.add_url_rule('/', view_func=self.get_info, methods=['GET'])
 		self.app.add_url_rule('/get_word', view_func=self.get_word, methods=['GET'])
 		self.app.add_url_rule('/get_wiki', view_func=self.get_wiki, methods=['GET'])
 		self.app.add_url_rule('/get_wiki/<word>', view_func=self.get_wiki, methods=['GET'])
@@ -25,6 +26,11 @@ class FunWithStringsAPI(object):
 
 	def run(self):
 		self.app.run(debug=True)
+
+	def get_info(self):
+		with open('readme.txt', 'r') as f:
+			info = f.read()
+			return make_response(jsonify(info), 200)
 
 	def _get_word(self):
 		resp = self.make_API_call(self.__RandWordURL)
@@ -77,7 +83,7 @@ class FunWithStringsAPI(object):
 	def count_words(self):
 		self.text.replace('.', ' ')
 		words = self.text.split()
-		self.wordcount = collections.Counter(words)
+		self.wordcount = Counter(words)
 
 	def get_words(self, word='', n = 5):
 		# if there's no preloaded text or user specify word explicitly - get a word

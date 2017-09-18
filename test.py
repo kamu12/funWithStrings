@@ -13,6 +13,11 @@ class StringsTestCase(unittest.TestCase):
         fs.app.testing = True
         self.app_test = fs.app.test_client()
 
+    def test_get_info_success(self):
+        with self.app_test as client:
+            response = client.get('/')
+            self.assertTrue(status.is_success(response.status_code))
+
     def test_get_word_success(self):
         with self.app_test as client:
             response = client.get('/get_word')
