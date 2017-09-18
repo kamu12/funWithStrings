@@ -19,6 +19,8 @@ class FunWithStringsAPI(object):
 		self.app.add_url_rule('/get_words/', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<int:n>', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<word>', view_func=self.get_words, methods=['GET'])
+		self.app.add_url_rule('/get_words/<int:n>/', view_func=self.get_words, methods=['GET'])
+		self.app.add_url_rule('/get_words/<word>/', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<word>/<int:n>', view_func=self.get_words, methods=['GET'])
 
 	def run(self):
@@ -90,8 +92,8 @@ class FunWithStringsAPI(object):
 		self.count_words()
 
 		sorted_list = sorted(self.wordcount, key=self.wordcount.get, reverse=True)
-		if n > len(sortedList):
-			n = len(sortedList)
+		if n > len(sorted_list):
+			n = len(sorted_list)
 		top = [(sorted_list[i], self.wordcount[sorted_list[i]]) for i in range(n)]
 
 		return make_response(jsonify({self.word: top}), 200)
