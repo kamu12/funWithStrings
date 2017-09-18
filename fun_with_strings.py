@@ -1,4 +1,4 @@
-from flask import Flask, abort, jsonify, json, make_response
+from flask import Flask, abort, jsonify, json, make_response, request
 import collections
 import requests
 
@@ -7,6 +7,7 @@ class FunWithStringsAPI(object):
 	__RandWordURL = 'http://setgetgo.com/randomword/get.php'
 	__WikiExistPageURL = 'https://en.wikipedia.org/w/api.php?action=parse&page={}&prop=&format=json'
 	__WikiPageURL = 'https://en.wikipedia.org/w/api.php?action=query&titles={}&prop=extracts&exintro=&format=json'
+	__RandJokeURL = 'http://api.icndb.com/jokes/random'
 	__ConnectionErrorMsg = 'Connection error. Please check your network connection.'
 	__NoPageErrorMsg = 'Ther''s no wiki page for this word. Please specify another one'
 	__NoPageErrorCode = 432
@@ -19,9 +20,8 @@ class FunWithStringsAPI(object):
 		self.app.add_url_rule('/get_words/', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<int:n>', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<word>', view_func=self.get_words, methods=['GET'])
-		self.app.add_url_rule('/get_words/<int:n>/', view_func=self.get_words, methods=['GET'])
-		self.app.add_url_rule('/get_words/<word>/', view_func=self.get_words, methods=['GET'])
 		self.app.add_url_rule('/get_words/<word>/<int:n>', view_func=self.get_words, methods=['GET'])
+		self.app.add_url_rule('/get_joke', view_func=self.get_joke, methods=['GET'])
 
 	def run(self):
 		self.app.run(debug=True)
@@ -97,6 +97,23 @@ class FunWithStringsAPI(object):
 		top = [(sorted_list[i], self.wordcount[sorted_list[i]]) for i in range(n)]
 
 		return make_response(jsonify({self.word: top}), 200)
+
+	def get_joke(self):
+		first_name = request.args.get('firstName')
+		last_name = request.args.get('lastName')
+		param = {}
+		if first_name is not None:
+			param['firstName'] = first_name
+		if last_name is not None:
+			param['lastName'] = last_name
+
+		resp = self.make_API_call(self.__RandJokeURL, param)
+		resp = resp.json()
+
+		if 'success' in resp['type']:
+			return make_response(jsonify(resp['value']['joke']), 200)
+		else:
+			return self.connection_error_resp()
 
 	def make_API_call(self, url = '', params = {}):
 		try:
