@@ -1,4 +1,4 @@
-from flask import Flask, abort, jsonify, json, make_response, request, Response
+from flask import Flask, abort, jsonify, json, make_response, request, Response, render_template
 from collections import Counter
 import requests
 
@@ -30,7 +30,7 @@ class FunWithStringsAPI(object):
 	def get_info(self):
 		with open('readme.txt', 'r') as f:
 			info = f.read()
-			return make_response(jsonify(info), 200)
+			return render_template('index.html', content = info)
 
 	def _get_word(self):
 		resp = self.make_API_call(self.__RandWordURL)
