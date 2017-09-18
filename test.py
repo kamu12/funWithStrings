@@ -19,32 +19,46 @@ class StringsTestCase(unittest.TestCase):
             self.assertTrue(status.is_success(response.status_code))
 
     def test_get_wiki_success(self):
-        with self.app.test_request_context():
-            fs = FunWithStringsAPI(__name__)
-            fs.word = 'lviv'
-            response = fs.get_wiki()
+        with self.app_test as client:
+            response = client.get('/get_wiki/lviv')
             self.assertTrue(status.is_success(response.status_code))
 
     def test_get_wiki_fail(self):
-        with self.app.test_request_context():
-            fs = FunWithStringsAPI(__name__)
-            fs.word = 'lvivlvivlviv'
-            response = fs.get_wiki()
+        with self.app_test as client:
+            response = client.get('/get_wiki/lvivasdzxc')
             self.assertTrue(status.is_client_error(response.status_code))
 
+
     def test_get_words_success(self):
-        with self.app.test_request_context():
-            fs = FunWithStringsAPI(__name__)
-            fs.word = 'lviv'
-            response = fs.get_words()
+        with self.app_test as client:
+            response = client.get('/get_words/lviv')
             self.assertTrue(status.is_success(response.status_code))
 
     def test_get_words_fail(self):
-        with self.app.test_request_context():
-            fs = FunWithStringsAPI(__name__)
-            fs.word = 'lviveiunewd'
-            response = fs.get_words()
+        with self.app_test as client:
+            response = client.get('/get_words/lvivasdzxc')
             self.assertTrue(status.is_client_error(response.status_code))
+
+    def test_get_words_fail_with_n(self):
+        with self.app_test as client:
+            response = client.get('/get_words/lvivasdzxc/8')
+            self.assertTrue(status.is_client_error(response.status_code))
+
+    def test_get_words_alot(self):
+        with self.app_test as client:
+                response = client.get('/get_words/lviv/10000')
+                self.assertTrue(status.is_success(response.status_code))
+
+    def test_get_words_zero(self):
+        with self.app_test as client:
+            response = client.get('/get_words/lviv/0')
+            self.assertTrue(status.is_success(response.status_code))
+
+    def test_get_words_negative(self):
+        with self.app_test as client:
+            response = client.get('/get_words/lviv/-1')
+            self.assertTrue(status.is_client_error(response.status_code))
+
 
 if __name__ == '__main__':
     unittest.main()
